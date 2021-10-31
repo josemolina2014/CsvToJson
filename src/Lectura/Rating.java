@@ -12,9 +12,9 @@ public class Rating {
     public static void main(String [] args) throws IOException {
         String fileNameToRead = PATH+"\\ratings.csv";
         FileReader fileReader = new FileReader(fileNameToRead);
-        List<Integer> samplesSizes = Arrays.asList(10000000);
+        List<Integer> samplesSizes = Arrays.asList(10,100,10000);
         List<String> records = new ArrayList<>();
-        boolean exportFull=true;
+        boolean exportFull=false;
 
         try (BufferedReader bufferedReader = new BufferedReader(fileReader))
         {
@@ -48,13 +48,14 @@ public class Rating {
             {
                 System.out.println("Full Export");
                 writeRawSQL(records, header);
-             //   writeRawJson(records,header);
+                writeRawJson(records,header);
             }
         }
     }
     private static void writeRawSQL(List<String> records, String header) throws IOException {
         String filePath = PATH+"\\sql-rating-"+(records.size())+".sql";
         System.out.println("writeRawSQL");
+        StringBuilder line= null;
         String sqlInsert="insert into rating ("+header+") values (";
         FileWriter writer = new FileWriter(filePath);
         try (
@@ -64,7 +65,7 @@ public class Rating {
             for (String record: records)
             {
                 String[] localRecords= record.split(",");
-                StringBuilder line= new StringBuilder();
+                line= new StringBuilder();
                 line.append(sqlInsert);
                 for (int i = 0; i < localRecords.length; i++) {
                     line.append(localRecords[i]) ;
@@ -84,7 +85,7 @@ public class Rating {
     private static void writeRawJson(List<String> records, String header) throws IOException {
         String filePath = "C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m\\json-rating-"+(records.size())+".json";
         String[] headers= header.split(",");
-
+        StringBuilder line= null;
         FileWriter writer = new FileWriter(filePath);
         try (
                 BufferedWriter bufferedWriter = new BufferedWriter(writer)
@@ -94,7 +95,7 @@ public class Rating {
             for (String record: records) {
 
                 String[] localRecords= record.split(",");
-                StringBuilder line= new StringBuilder();
+                line= new StringBuilder();
                 line.append("{");
 
                 for (int i = 0; i < headers.length; i++) {
