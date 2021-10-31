@@ -12,11 +12,9 @@ public class Rating {
     public static void main(String [] args) throws IOException {
         String fileNameToRead = PATH+"\\ratings.csv";
         FileReader fileReader = new FileReader(fileNameToRead);
-        List<Integer> samplesSizes = Arrays.asList(10,100,1000,10000);
+        List<Integer> samplesSizes = Arrays.asList(10000000);
         List<String> records = new ArrayList<>();
-        boolean exportFull=false;
-
-        StringBuffer buffer = new StringBuffer();
+        boolean exportFull=true;
 
         try (BufferedReader bufferedReader = new BufferedReader(fileReader))
         {
@@ -44,94 +42,76 @@ public class Rating {
 
                 lineas++;
             }
+            System.out.println("lineas = " + lineas);
+
             if(exportFull)
             {
+                System.out.println("Full Export");
                 writeRawSQL(records, header);
-                writeRawJson(records,header);
+             //   writeRawJson(records,header);
             }
-
-            System.out.println("lineas = " + lineas);
         }
     }
     private static void writeRawSQL(List<String> records, String header) throws IOException {
         String filePath = PATH+"\\sql-rating-"+(records.size())+".sql";
-        System.out.println("filePath = " + filePath);
-
+        System.out.println("writeRawSQL");
         String sqlInsert="insert into rating ("+header+") values (";
         FileWriter writer = new FileWriter(filePath);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
-
-        try
+        try (
+             BufferedWriter bufferedWriter = new BufferedWriter(writer)
+             )
         {
-            int index=0;
-            for (String record: records) {
-
+            for (String record: records)
+            {
                 String[] localRecords= record.split(",");
-                String value=sqlInsert;
-                //System.out.println(record);
+                StringBuilder line= new StringBuilder();
+                line.append(sqlInsert);
                 for (int i = 0; i < localRecords.length; i++) {
-                    value+= localRecords[i] ;
+                    line.append(localRecords[i]) ;
 
                     if(i<localRecords.length-1)
-                        value+=",";
+                        line.append(",");
                 }
-                value+=");";
+                line.append(");\n");
 
-                bufferedWriter.write(value+"\n");
+                bufferedWriter.write(line.toString());
 
-                index++;
-            }
-        } finally {
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
             }
         }
+        System.out.println("filePath = " + filePath +" Done");
     }
 
     private static void writeRawJson(List<String> records, String header) throws IOException {
-        String filePath = "C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m\\json-"+(records.size())+".json";
-        System.out.println("filePath = " + filePath);
-        //File file = File.createTempFile(filePath, ".csv");
-
+        String filePath = "C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m\\json-rating-"+(records.size())+".json";
         String[] headers= header.split(",");
 
-
-
         FileWriter writer = new FileWriter(filePath);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
-
-        try
+        try (
+                BufferedWriter bufferedWriter = new BufferedWriter(writer)
+            )
         {
             int index=0;
             for (String record: records) {
 
                 String[] localRecords= record.split(",");
-                String value="{";
-                //System.out.println(record);
+                StringBuilder line= new StringBuilder();
+                line.append("{");
+
                 for (int i = 0; i < headers.length; i++) {
-                    value+= "\""+headers[i]+"\": "+localRecords[i];
+                    line.append( "\"").append(headers[i]).append("\": ").append(localRecords[i]);
 
                     if(i<headers.length-1)
-                        value+=",";
+                        line.append(",");
                 }
-
+                line.append("}");
                 if(index<records.size()-1)
-                    value+="},";
-                else
-                    value+="}";
+                    line.append(",");
 
-                bufferedWriter.write(value+"\n");
-
-
+                bufferedWriter.write(line+"\n");
 
                 index++;
             }
-            //writer.flush(); // close() should take care of this
-            //bufferedWriter.close();
-        } finally {
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
-            }
         }
+        System.out.println("filePath = " + filePath +" Done");
     }
 }

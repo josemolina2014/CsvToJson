@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Movies {
     public static String PATH="C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m";
@@ -57,34 +58,35 @@ public class Movies {
 
 
         FileWriter writer = new FileWriter(filePath);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
 
-        try {
+
+        try ( BufferedWriter bufferedWriter = new BufferedWriter(writer))
+        {
             int index = 0;
             for (String record : records) {
 
                 String[] localRecords = getRecords(record);
-                String value = "{";
+                StringBuilder line= new StringBuilder();
+                line.append("{");
 
                 for (int i = 0; i < headers.length; i++) {
-                    value += "\"" + headers[i] + "\": " + getStringValue(localRecords[i]);
+                    line.append("\"").append(headers[i] ).append("\": ");
+                    if(i==2)
+                        line.append("[").append(getGenresValue(localRecords[i])).append("]");
+                    else
+                        line.append(getStringValue(localRecords[i]));
 
                     if (i < headers.length - 1)
-                        value += ",";
+                        line.append(",");
                 }
 
+                line.append("}");
                 if (index < records.size() - 1)
-                    value += "},";
-                else
-                    value += "}";
+                    line.append(",");
 
-                bufferedWriter.write(value+"\n");
+                bufferedWriter.write(line+"\n");
 
                 index++;
-            }
-        } finally {
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
             }
         }
     }
@@ -94,7 +96,15 @@ public class Movies {
     }
 
     private static String getStringValue(String localRecord) {
-        return "\"" + localRecord.replace("\"", "") + "\"";
+        return "\"" + localRecord.replace("\"", "") .replaceAll("'","")+ "\"";
+    }
+
+    private static String getGenresValue(String localRecord) {
+        if(localRecord.equalsIgnoreCase("(no genres listed)")) return "";
+        String[] generes = localRecord.split("\\|");
+        return Arrays.stream(generes)
+                        .map(plain -> '"' + (plain) + '"')
+                        .collect(Collectors.joining(","));
     }
 
     private static void writeRawSQL(List<String> records, String header) throws IOException {
@@ -112,17 +122,18 @@ public class Movies {
             for (String record: records) {
 
                 String[] localRecords= getRecords(record);
-                String value=sqlInsert;
-                //System.out.println(record);
+                StringBuilder line= new StringBuilder();
+                line.append(sqlInsert);
+
                 for (int i = 0; i < localRecords.length; i++) {
-                    value+= getStringValue(localRecords[i]);
+                    line.append(getStringValue(localRecords[i]));
 
                     if(i<localRecords.length-1)
-                        value+=",";
+                        line.append(",");
                 }
-                value+=");";
+                line.append(");\n");
 
-                bufferedWriter.write(value+"\n");
+                bufferedWriter.write(line.toString());
 
                 index++;
             }
