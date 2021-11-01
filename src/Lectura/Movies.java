@@ -48,6 +48,13 @@ public class Movies {
             System.out.println("lineas = " + (lineas-1));
         }
     }
+
+    /**
+     * Genera un archivo Json a partir de la estrucutra del archivo csv,
+     * @param records
+     * @param header
+     * @throws IOException
+     */
     private static void writeRawJson(List<String> records, String header) throws IOException {
         String filePath = PATH+"\\movies-json-" + (records.size()) + ".json";
         System.out.println("filePath = " + filePath);
@@ -63,7 +70,7 @@ public class Movies {
             int index = 0;
             for (String record : records) {
 
-                String[] localRecords = getRecords(record);
+                String[] localRecords = splitLineByComma(record);
                 StringBuilder line= new StringBuilder();
                 line.append("{");
 
@@ -89,14 +96,35 @@ public class Movies {
         }
     }
 
-    private static String[] getRecords(String record) {
-        return record.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+    /**
+     * se encarga de hacer la division de la cadena usando la comma como separador
+     * en este caso si la cadena tiene una comilla doble no la divide,
+     * ejemplo la linea 11,"American President, The (1995)",Comedy|Drama|Romance
+     * quedaria asi,<br>
+     * 0-> 11 <br>
+     * 1-> "American President, The (1995)" <br>
+     * 2-> Comedy|Drama|Romance
+     * @param line linea de evaluacion
+     * @return lista de los elementos separados por coma
+     */
+    private static String[] splitLineByComma(String line) {
+        return line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
     }
 
+    /**
+     * obtiene el valor del campo com comillas dobles
+     * @param localRecord
+     * @return
+     */
     private static String getStringValue(String localRecord) {
         return "\"" + localRecord.replace("\"", "") .replaceAll("'","")+ "\"";
     }
 
+    /**
+     * seapra los generos separados por | y lo expresa en forma de matriz json
+     * @param localRecord
+     * @return
+     */
     private static String getGenresValue(String localRecord) {
         if(localRecord.equalsIgnoreCase("(no genres listed)")) return "";
         String[] generes = localRecord.split("\\|");
@@ -112,7 +140,13 @@ public class Movies {
     }
 
 
-
+    /**
+     * Genera un archivo sql a partir de la estrucutra del archivo csv,
+     * adicionalmente genera los insert de la tabla  generos y la tabla de relacion entre peliculas y generos
+     * @param records registros a procesar
+     * @param header encabeazado del archivo
+     * @throws IOException
+     */
     private static void writeRawSQL(List<String> records, String header) throws IOException {
         String filePath = PATH+"\\movie-sql-"+(records.size())+".sql";
         System.out.println("filePath = " + filePath);
@@ -128,7 +162,7 @@ public class Movies {
             int index=0;
             for (String record: records) {
 
-                String[] localRecords= getRecords(record);
+                String[] localRecords= splitLineByComma(record);
                 StringBuilder line= new StringBuilder();
                 line.append(sqlInsert);
                 String movieId= "";
@@ -158,6 +192,13 @@ public class Movies {
         exportMovieGenresValues(genresList, records.size());
     }
 
+    /**
+     * exporta a un archivo de texto el comando insert para sql de la tabla generos a partir del HashMap con la lista
+     * de generos encontrados dentro del archivo
+     * @param records tamaño del archivo de peliculas exportado
+     * @param genresMap HashMap con los generos unicos encontrados dentro del documento csv
+     * @throws IOException
+     */
     private static void exportGenresValues(int records, HashMap<String, Integer> genresMap) throws IOException {
         String filePath = PATH+"\\genres-sql-"+(records)+".sql";
         FileWriter writer = new FileWriter(filePath);
@@ -169,6 +210,13 @@ public class Movies {
         }
     }
 
+    /**
+     * exporta a un archivo de texto las instrucciones insert para sql de la tabla de la relacion entre peliculas y generos que esta
+     * alamacenado en la lista genresList que se recibe como parametro
+     * @param genresList Lista con los insert para la tabla movie_genres
+     * @param records tamaño del archivo de peliculas exportado
+     * @throws IOException
+     */
     private static void exportMovieGenresValues(List<String> genresList, int records) throws IOException {
         String filePath = PATH+"\\movie-genres-sql-"+(records)+".sql";
         FileWriter writer = new FileWriter(filePath);
@@ -181,6 +229,16 @@ public class Movies {
         }
     }
 
+    /**
+     * seapra los generos separados por | y les agrega un id unico a cada registro y los alamacena en un HasMap
+     * adicionalmente genera una lista de String List<String> con los insert para la tabla de la relacion entre peliculas
+     * y generos llamada movie_generes
+     *
+     * @param genresMap
+     * @param genresList
+     * @param localRecord
+     * @param movieId
+     */
     private static void extractGenresValuesToSQL(HashMap<String, Integer> genresMap, List<String> genresList, String localRecord, String movieId) {
         String[] genres =getGenresValueToSQL(localRecord);
         for (int val = 0; val < genres.length; val++) {

@@ -26,17 +26,25 @@ public class RatingSplit {
 
     }
 
-    private static void readAndExportFile(String fileNameToRead, int size, long total) throws IOException {
+    /**
+     *
+     * @param fileNameToRead nombre del archivo a leer
+     * @param sampleSize tamaño de la muestra a exportar, -1 para indicar que no hay
+     *                   restriccion y se exporta el archivo completo
+     * @param totalLines tamaño total del archivo
+     * @throws IOException
+     */
+    private static void readAndExportFile(String fileNameToRead, int sampleSize, long totalLines) throws IOException {
 
         FileReader fileReader = new FileReader(fileNameToRead);
-        int fileSize=(size!=-1)?size:(int)total;
+        int exportFileSize=(sampleSize!=-1)?sampleSize:(int)totalLines;
 
         String[] headers = null;
-        String jsonFile = PATH+"\\rating-json-"+ fileSize +".json";
+        String jsonFile = PATH+"\\rating-json-"+ exportFileSize +".json";
         FileWriter writerJson = new FileWriter(jsonFile);
         BufferedWriter bufferedWriterJson = new BufferedWriter(writerJson);
 
-        String sqlFile = PATH+"\\rating-sql-"+ fileSize +".sql";
+        String sqlFile = PATH+"\\rating-sql-"+ exportFileSize +".sql";
         BufferedWriter bufferedWriterSQL = new BufferedWriter(new FileWriter(sqlFile));
 
 
@@ -46,9 +54,9 @@ public class RatingSplit {
             String header="";
             int lineas=0;
 
-            int lastLine=fileSize;
-            if(size==-1)
-                lastLine= (int)total-1;
+            int lastLine=exportFileSize;
+            if(sampleSize==-1)
+                lastLine= (int)totalLines-1;
 
             while((line = bufferedReader.readLine()) != null)
             {
@@ -67,7 +75,7 @@ public class RatingSplit {
                     }
                     catch (Exception e){ }
 
-                    if(size!=-1 && lineas== fileSize)
+                    if(sampleSize!=-1 && lineas== exportFileSize)
                         break;
 
                 }
@@ -80,6 +88,12 @@ public class RatingSplit {
         }
     }
 
+    /**
+     * obtiene el total de registros del archivo csv
+     * @param fileNameToRead
+     * @return
+     * @throws IOException
+     */
     private static long getTotal(String fileNameToRead) throws IOException {
         FileReader fileReader = new FileReader(fileNameToRead);
         long total=0L;
@@ -90,7 +104,13 @@ public class RatingSplit {
         return total;
     }
 
-
+    /**
+     * Transforma la linea a un formato json
+     * @param record
+     * @param headers
+     * @return
+     * @throws IOException
+     */
     private static String convertToJson(String record, String[] headers) throws IOException {
         StringBuilder line= null;
         String[] localRecords= record.split(",");
@@ -108,6 +128,13 @@ public class RatingSplit {
         return line.toString();
     }
 
+    /**
+     * Transforma la linea en una instruccion insert sql
+     * @param record
+     * @param header
+     * @return
+     * @throws IOException
+     */
     private static String covertToSQLInsert(String record, String header) throws IOException
     {
         StringBuilder line= new StringBuilder();;
