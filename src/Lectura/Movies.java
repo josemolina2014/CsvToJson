@@ -1,9 +1,7 @@
 package Lectura;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Movies {
@@ -14,7 +12,7 @@ public class Movies {
         FileReader fileReader = new FileReader(fileName);
         List<Integer> samplesSizes = Arrays.asList(10,100,1000, 10000, 50000, 62423 );
         List<String> records = new ArrayList<>();
-        boolean exportFull=false;
+        boolean exportFull=samplesSizes.isEmpty();
 
         StringBuffer buffer = new StringBuffer();
 
@@ -55,7 +53,7 @@ public class Movies {
         System.out.println("filePath = " + filePath);
 
         String[] headers = header.split(",");
-
+        headers[0]="_id";
 
         FileWriter writer = new FileWriter(filePath);
 
@@ -107,16 +105,25 @@ public class Movies {
                         .collect(Collectors.joining(","));
     }
 
+    private static String [] getGenresValueToSQL(String localRecord) {
+        if(localRecord.equalsIgnoreCase("(no genres listed)")) return new String[]{""};
+        String[] generes = localRecord.split("\\|");
+        return generes;
+    }
+
+
+
     private static void writeRawSQL(List<String> records, String header) throws IOException {
         String filePath = PATH+"\\movie-sql-"+(records.size())+".sql";
         System.out.println("filePath = " + filePath);
 
         String sqlInsert="insert into movies ("+header+") values (";
-
         FileWriter writer = new FileWriter(filePath);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
 
-        try
+        HashMap<String, Integer> genresMap = new LinkedHashMap<>();
+        List<String> genresList = new ArrayList<>();
+
+        try (BufferedWriter bufferedWriter = new BufferedWriter(writer))
         {
             int index=0;
             for (String record: records) {
@@ -124,11 +131,20 @@ public class Movies {
                 String[] localRecords= getRecords(record);
                 StringBuilder line= new StringBuilder();
                 line.append(sqlInsert);
+                String movieId= "";
+                for (int i = 0; i < localRecords.length; i++)
+                {
+                    if(i==0)
+                        movieId= localRecords[i];
 
-                for (int i = 0; i < localRecords.length; i++) {
-                    line.append(getStringValue(localRecords[i]));
+                    if(i==2)
+                    {
+                        extractGenresValuesToSQL(genresMap, genresList, localRecords[i], movieId);
+                    }
+                    else
+                        line.append(getStringValue(localRecords[i]));
 
-                    if(i<localRecords.length-1)
+                    if(i<localRecords.length-2)
                         line.append(",");
                 }
                 line.append(");\n");
@@ -137,9 +153,43 @@ public class Movies {
 
                 index++;
             }
-        } finally {
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
+        }
+        exportGenresValues(records.size(), genresMap);
+        exportMovieGenresValues(genresList, records.size());
+    }
+
+    private static void exportGenresValues(int records, HashMap<String, Integer> genresMap) throws IOException {
+        String filePath = PATH+"\\genres-sql-"+(records)+".sql";
+        FileWriter writer = new FileWriter(filePath);
+        try (BufferedWriter bufferedWriter = new BufferedWriter(writer))
+        {
+            for (Map.Entry<String, Integer> entry : genresMap.entrySet()) {
+                bufferedWriter.write("insert into genres (id, name) values (" + entry.getValue()+",\""+entry.getKey() + "\");\n");
+            }
+        }
+    }
+
+    private static void exportMovieGenresValues(List<String> genresList, int records) throws IOException {
+        String filePath = PATH+"\\movie-genres-sql-"+(records)+".sql";
+        FileWriter writer = new FileWriter(filePath);
+
+        try (BufferedWriter bufferedWriter = new BufferedWriter(writer))
+        {
+            for (String value: genresList) {
+                    bufferedWriter.write(value);
+            }
+        }
+    }
+
+    private static void extractGenresValuesToSQL(HashMap<String, Integer> genresMap, List<String> genresList, String localRecord, String movieId) {
+        String[] genres =getGenresValueToSQL(localRecord);
+        for (int val = 0; val < genres.length; val++) {
+            if(!genres[val].isEmpty())
+            {
+                if(genresMap.get(genres[val])==null){
+                    genresMap.put(genres[val],genresMap.size()+1);
+                }
+                genresList.add("insert into movie_genres (movieId, genreId) values ("+movieId+","+genresMap.get(genres[val])+");\n" );
             }
         }
     }
