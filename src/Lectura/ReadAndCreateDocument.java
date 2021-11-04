@@ -6,9 +6,9 @@ import java.util.stream.Collectors;
 
 public class ReadAndCreateDocument {
 
-    private String FOLDER_PATH="/home/jlmolina/Documents/benchmark/ml-25m";
-    private String moviesLocation = FOLDER_PATH+"/movies.csv";
-    private String ratingFileLocaton = FOLDER_PATH+"/ratings.csv";
+    private String FOLDER_PATH="/home/jlmolina/Documents/benchmark/ml-25m/";
+    private String moviesLocation = FOLDER_PATH+"movies.csv";
+    private String ratingFileLocaton = FOLDER_PATH+"ratings.csv";
 
     private Map<String, List<String>> ratingsMap;
 
@@ -16,7 +16,7 @@ public class ReadAndCreateDocument {
         /*tamaño o numero de lineas a exportar, si se quiere exportar
             el archivo completo dejar samplesSize=-1;
          */
-        int samplesSize =-1;
+        int samplesSize =5000;
         new ReadAndCreateDocument().loadFiles(samplesSize);
     }
 
@@ -26,9 +26,9 @@ public class ReadAndCreateDocument {
 
         String moviesDocumentFileJson = null;
         if(fullExport)
-            moviesDocumentFileJson = FOLDER_PATH+"/document-movies-exp.json";
+            moviesDocumentFileJson = FOLDER_PATH+"document-movies-exp.json";
         else
-            moviesDocumentFileJson = FOLDER_PATH+"/document-movies-exp"+samplesSize+"-1.json";
+            moviesDocumentFileJson = FOLDER_PATH+"document-movies-exp"+samplesSize+"-1.json";
         FileReader moviesFileReader = new FileReader(moviesLocation);
         FileWriter writerJson = new FileWriter(moviesDocumentFileJson);
 
@@ -60,7 +60,7 @@ public class ReadAndCreateDocument {
                         if(numRegistros==samplesSize){
                             bufferedWriterJson.close();
 
-                            moviesDocumentFileJson = FOLDER_PATH+"/document-movies-exp"+samplesSize+"-"+numBloques+".json";
+                            moviesDocumentFileJson = FOLDER_PATH+"document-movies-exp"+samplesSize+"-"+numBloques+".json";
                             System.out.println("moviesDocumentFileJson = " +moviesDocumentFileJson);
                             bufferedWriterJson = new BufferedWriter(new FileWriter(moviesDocumentFileJson));
                             numBloques++;
