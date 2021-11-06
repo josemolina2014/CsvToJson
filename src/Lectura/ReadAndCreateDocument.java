@@ -2,11 +2,13 @@ package Lectura;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ReadAndCreateDocument {
 
-    private String FOLDER_PATH="/home/jlmolina/Documents/benchmark/ml-25m/";
+    private String FOLDER_PATH="C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m\\";
     private String moviesLocation = FOLDER_PATH+"movies.csv";
     private String ratingFileLocaton = FOLDER_PATH+"ratings.csv";
 
@@ -16,7 +18,7 @@ public class ReadAndCreateDocument {
         /*tamaño o numero de lineas a exportar, si se quiere exportar
             el archivo completo dejar samplesSize=-1;
          */
-        int samplesSize =5000;
+        int samplesSize =-1;
         new ReadAndCreateDocument().loadFiles(samplesSize);
     }
 
@@ -125,6 +127,7 @@ public class ReadAndCreateDocument {
         String[] localRecords= splitLineByComma(record);
         headers[0]="_id"; // se ajusta al formato de id para couchDB
         line.append("{");
+        String movieYear= "";
         for (int i = 0; i < headers.length; i++) {
             line.append("\"").append(headers[i] ).append("\": ");
             if(i==2)
@@ -134,11 +137,14 @@ public class ReadAndCreateDocument {
 
             //if (i < headers.length - 1)
             line.append(",");
+
+            if(i==1)
+                movieYear= extractYear(localRecords[i]);
         }
+        line.append("\"year\":").append(movieYear).append(",");
         line.append(findRatingByMovieId(localRecords[0]));
         line.append("}\n");
         return line.toString();
-
     }
 
     private String findRatingByMovieId(String movieId) throws IOException
@@ -222,6 +228,21 @@ public class ReadAndCreateDocument {
         return line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", -1);
     }
 
-
+    /**
+     * Extrae el año del titulo de la pelicula
+     * @param text titulo de la pelicula
+     * @return año de la pelicula o 0 sino lo encuentra
+     */
+    private static String extractYear(String text)
+    {
+        String regex ="(\\d{4})";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        else
+            return "0";
+    }
 
 }

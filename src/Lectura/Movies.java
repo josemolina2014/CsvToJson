@@ -2,15 +2,17 @@ package Lectura;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Movies {
-    public static String PATH="C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m";
+    public static String PATH="C:\\Users\\josemolina\\Downloads\\ml-25m\\ml-25m\\";
 
     public static void main(String [] args) throws IOException {
-        String fileName = PATH+"\\movies.csv";
+        String fileName = PATH+"movies.csv";
         FileReader fileReader = new FileReader(fileName);
-        List<Integer> samplesSizes = Arrays.asList(10,100,1000, 10000, 50000, 62423 );
+        List<Integer> samplesSizes = Arrays.asList();
         List<String> records = new ArrayList<>();
         boolean exportFull=samplesSizes.isEmpty();
 
@@ -73,9 +75,9 @@ public class Movies {
                 String[] localRecords = splitLineByComma(record);
                 StringBuilder line= new StringBuilder();
                 line.append("{");
-
+                String movieYear= "";
                 for (int i = 0; i < headers.length; i++) {
-                    line.append("\"").append(headers[i] ).append("\": ");
+                    line.append("\"").append(headers[i]).append("\": ");
                     if(i==2)
                         line.append("[").append(getGenresValue(localRecords[i])).append("]");
                     else
@@ -83,7 +85,12 @@ public class Movies {
 
                     if (i < headers.length - 1)
                         line.append(",");
+
+                    if(i==1)
+                        movieYear= extractYear(localRecords[i]);
                 }
+
+                    line.append(",").append("\"year\":").append(movieYear);
 
                 line.append("}");
                 if (index < records.size() - 1)
@@ -151,7 +158,7 @@ public class Movies {
         String filePath = PATH+"\\movie-sql-"+(records.size())+".sql";
         System.out.println("filePath = " + filePath);
 
-        String sqlInsert="insert into movies ("+header+") values (";
+        String sqlInsert="insert into movies ("+header+",year ) values (";
         FileWriter writer = new FileWriter(filePath);
 
         HashMap<String, Integer> genresMap = new LinkedHashMap<>();
@@ -166,10 +173,13 @@ public class Movies {
                 StringBuilder line= new StringBuilder();
                 line.append(sqlInsert);
                 String movieId= "";
+                String movieYear= "";
                 for (int i = 0; i < localRecords.length; i++)
                 {
                     if(i==0)
                         movieId= localRecords[i];
+                    if(i==1)
+                        movieYear= extractYear(localRecords[i]);
 
                     if(i==2)
                     {
@@ -178,9 +188,11 @@ public class Movies {
                     else
                         line.append(getStringValue(localRecords[i]));
 
+
                     if(i<localRecords.length-2)
                         line.append(",");
                 }
+                line.append(","+movieYear);
                 line.append(");\n");
 
                 bufferedWriter.write(line.toString());
@@ -190,6 +202,23 @@ public class Movies {
         }
         exportGenresValues(records.size(), genresMap);
         exportMovieGenresValues(genresList, records.size());
+    }
+
+    /**
+     * Extrae el año del titulo de la pelicula
+     * @param text titulo de la pelicula
+     * @return año de la pelicula o 0 sino lo encuentra
+     */
+    private static String extractYear(String text)
+    {
+        String regex ="(\\d{4})";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        else
+            return "0";
     }
 
     /**
@@ -205,7 +234,7 @@ public class Movies {
         try (BufferedWriter bufferedWriter = new BufferedWriter(writer))
         {
             for (Map.Entry<String, Integer> entry : genresMap.entrySet()) {
-                bufferedWriter.write("insert into genres (id, name) values (" + entry.getValue()+",\""+entry.getKey() + "\");\n");
+                bufferedWriter.write("insert into genres (id, genre) values (" + entry.getValue()+",\""+entry.getKey() + "\");\n");
             }
         }
     }
@@ -247,7 +276,7 @@ public class Movies {
                 if(genresMap.get(genres[val])==null){
                     genresMap.put(genres[val],genresMap.size()+1);
                 }
-                genresList.add("insert into movie_genres (movieId, genreId) values ("+movieId+","+genresMap.get(genres[val])+");\n" );
+                genresList.add("insert into MOVIEBYGENRE (movieid, genreid) values ("+movieId+","+genresMap.get(genres[val])+");\n" );
             }
         }
     }
